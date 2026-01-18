@@ -1,0 +1,66 @@
+{
+  "name": "@yhjs/lunar",
+  "version": "0.1.0",
+  "description": "Chinese lunar calendar and astronomical calculations library",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    },
+    "./lunar": {
+      "import": "./dist/lunar.js",
+      "require": "./dist/lunar.cjs",
+      "types": "./dist/lunar.d.ts"
+    },
+    "./eclipse": {
+      "import": "./dist/eclipse.js",
+      "require": "./dist/eclipse.cjs",
+      "types": "./dist/eclipse.d.ts"
+    },
+    "./astronomy": {
+      "import": "./dist/astronomy.js",
+      "require": "./dist/astronomy.cjs",
+      "types": "./dist/astronomy.d.ts"
+    },
+    "./data": {
+      "import": "./dist/data.js",
+      "require": "./dist/data.cjs",
+      "types": "./dist/data.d.ts"
+    }
+  },
+  "unpkg": "./dist/index.umd.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext .ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "lunar",
+    "calendar",
+    "chinese",
+    "astronomy",
+    "solar-term",
+    "gan-zhi",
+    "eclipse"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0",
+    "vite-plugin-dts": "^3.6.0",
+    "vitest": "^1.0.0"
+  }
+}
