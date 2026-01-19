@@ -93,3 +93,13 @@ export {
   degreesToRadians,
   radiansToDegrees,
 } from './rise-transit-set';
+
+// 晨昏光计算
+export {
+  TwilightType,
+  TwilightTimes,
+  calculateTwilight,
+  calculateCivilTwilight,
+  calculateNauticalTwilight,
+  calculateAstronomicalTwilight,
+} from './twilight';
