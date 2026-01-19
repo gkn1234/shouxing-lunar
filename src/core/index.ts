@@ -12,3 +12,4 @@ export * from './nutation';
 export * from './precession';
 export * from './series';
 export * from './types';
+export * from './cache';
