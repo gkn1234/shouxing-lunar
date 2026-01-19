@@ -16,6 +16,55 @@ import {
   calculateEarthSunDistance,
 } from './sun';
 
+// 导入各行星 VSOP87 数据
+import {
+  MERCURY_MULTIPLIER,
+  MERCURY_L,
+  MERCURY_B,
+  MERCURY_R,
+} from '../data/vsop87/mercury';
+import {
+  VENUS_MULTIPLIER,
+  VENUS_L,
+  VENUS_B,
+  VENUS_R,
+} from '../data/vsop87/venus';
+import {
+  MARS_MULTIPLIER,
+  MARS_L,
+  MARS_B,
+  MARS_R,
+} from '../data/vsop87/mars';
+import {
+  JUPITER_MULTIPLIER,
+  JUPITER_L,
+  JUPITER_B,
+  JUPITER_R,
+} from '../data/vsop87/jupiter';
+import {
+  SATURN_MULTIPLIER,
+  SATURN_L,
+  SATURN_B,
+  SATURN_R,
+} from '../data/vsop87/saturn';
+import {
+  URANUS_MULTIPLIER,
+  URANUS_L,
+  URANUS_B,
+  URANUS_R,
+} from '../data/vsop87/uranus';
+import {
+  NEPTUNE_MULTIPLIER,
+  NEPTUNE_L,
+  NEPTUNE_B,
+  NEPTUNE_R,
+} from '../data/vsop87/neptune';
+import {
+  PLUTO_MULTIPLIER,
+  PLUTO_OFFSET,
+  PLUTO_DATA,
+} from '../data/vsop87/pluto';
+
 /**
  * 行星编号
  */
@@ -111,6 +160,206 @@ export const PLANET_ORBITAL_PERIODS = [
 ];
 
 /**
+ * 行星 VSOP87 数据配置
+ */
+interface PlanetVSOP87Config {
+  multiplier: number;
+  L: number[][];
+  B: number[][];
+  R: number[][];
+  corrections: number[]; // [黄经修正, 黄纬修正, 距离修正]
+}
+
+/**
+ * 各行星 VSOP87 数据映射
+ */
+const PLANET_VSOP87_DATA: Record<number, PlanetVSOP87Config> = {
+  [Planet.Mercury]: {
+    multiplier: MERCURY_MULTIPLIER,
+    L: MERCURY_L,
+    B: MERCURY_B,
+    R: MERCURY_R,
+    corrections: PLANET_CORRECTIONS[0],
+  },
+  [Planet.Venus]: {
+    multiplier: VENUS_MULTIPLIER,
+    L: VENUS_L,
+    B: VENUS_B,
+    R: VENUS_R,
+    corrections: PLANET_CORRECTIONS[1],
+  },
+  [Planet.Mars]: {
+    multiplier: MARS_MULTIPLIER,
+    L: MARS_L,
+    B: MARS_B,
+    R: MARS_R,
+    corrections: PLANET_CORRECTIONS[2],
+  },
+  [Planet.Jupiter]: {
+    multiplier: JUPITER_MULTIPLIER,
+    L: JUPITER_L,
+    B: JUPITER_B,
+    R: JUPITER_R,
+    corrections: PLANET_CORRECTIONS[3],
+  },
+  [Planet.Saturn]: {
+    multiplier: SATURN_MULTIPLIER,
+    L: SATURN_L,
+    B: SATURN_B,
+    R: SATURN_R,
+    corrections: PLANET_CORRECTIONS[4],
+  },
+  [Planet.Uranus]: {
+    multiplier: URANUS_MULTIPLIER,
+    L: URANUS_L,
+    B: URANUS_B,
+    R: URANUS_R,
+    corrections: PLANET_CORRECTIONS[5],
+  },
+  [Planet.Neptune]: {
+    multiplier: NEPTUNE_MULTIPLIER,
+    L: NEPTUNE_L,
+    B: NEPTUNE_B,
+    R: NEPTUNE_R,
+    corrections: PLANET_CORRECTIONS[6],
+  },
+};
+
+/**
+ * 弧度转角秒常数
+ */
+const RAD_TO_ARCSEC = 180 * 3600 / Math.PI;
+
+/**
+ * 计算 VSOP87 级数求和
+ * @see eph0.js:955-981 XL0_calc函数
+ *
+ * @param data - 级数数据数组 [振幅, 相位, 频率, ...]
+ * @param t - 儒略千年数 (J2000起算)
+ * @param termCount - 计算项数 (-1 表示全部)
+ * @returns 级数求和结果
+ */
+function calculateVSOP87Series(
+  data: number[],
+  t: number,
+  termCount: number = -1
+): number {
+  if (data.length === 0) return 0;
+
+  const totalTerms = Math.floor(data.length / 3);
+  const n = termCount < 0 ? totalTerms : Math.min(termCount, totalTerms);
+
+  let sum = 0;
+  for (let i = 0; i < n; i++) {
+    const idx = i * 3;
+    const amplitude = data[idx];
+    const phase = data[idx + 1];
+    const frequency = data[idx + 2];
+    sum += amplitude * Math.cos(phase + frequency * t);
+  }
+
+  return sum;
+}
+
+/**
+ * 计算行星 VSOP87 坐标分量
+ *
+ * @param dataArrays - L0-L5 或 B0-B5 或 R0-R5 数据数组
+ * @param multiplier - 数据倍率
+ * @param t - 儒略世纪数 (J2000起算)
+ * @param termCount - 计算项数 (-1 表示全部)
+ * @returns 坐标分量值
+ */
+function calculateVSOP87Component(
+  dataArrays: number[][],
+  multiplier: number,
+  t: number,
+  termCount: number = -1
+): number {
+  const tMillennia = t / 10; // 转为儒略千年数
+
+  let result = 0;
+  let tPower = 1;
+
+  for (let i = 0; i < dataArrays.length; i++) {
+    const data = dataArrays[i];
+    if (data && data.length > 0) {
+      let n = termCount;
+      if (termCount > 0 && i > 0 && dataArrays[0].length > 0) {
+        // 高次项使用较少的项数
+        const ratio = (data.length / 3) / (dataArrays[0].length / 3);
+        n = Math.max(3, Math.round(termCount * ratio));
+      }
+
+      const seriesSum = calculateVSOP87Series(data, tMillennia, n);
+      result += seriesSum * tPower;
+    }
+    tPower *= tMillennia;
+  }
+
+  return result / multiplier;
+}
+
+/**
+ * 计算冥王星 J2000 直角坐标
+ * @see eph0.js:984-1000 pluto_coord函数
+ *
+ * 冥王星使用与其他行星不同的计算方法
+ *
+ * @param t - 儒略世纪数 (J2000起算)
+ * @returns [X, Y, Z] 直角坐标 (AU)
+ */
+function calculatePlutoRectangular(t: number): [number, number, number] {
+  const c0 = Math.PI / 180 / 100000;
+  const x = -1 + 2 * (t * 36525 + 1825394.5) / 2185000;
+  const T = t / 100000000;
+  const r: [number, number, number] = [0, 0, 0];
+
+  for (let i = 0; i < 9; i++) {
+    const ob = PLUTO_DATA[i];
+    const N = ob.length;
+    let v = 0;
+
+    for (let j = 0; j < N; j += 3) {
+      v += ob[j] * Math.sin(ob[j + 1] * T + ob[j + 2] * c0);
+    }
+
+    if (i % 3 === 1) v *= x;
+    if (i % 3 === 2) v *= x * x;
+
+    r[Math.floor(i / 3)] += v / PLUTO_MULTIPLIER;
+  }
+
+  // 常数校正项
+  r[0] += PLUTO_OFFSET.X[0] + PLUTO_OFFSET.X[1] * x;
+  r[1] += PLUTO_OFFSET.Y[0] + PLUTO_OFFSET.Y[1] * x;
+  r[2] += PLUTO_OFFSET.Z[0] + PLUTO_OFFSET.Z[1] * x;
+
+  return r;
+}
+
+/**
+ * 计算冥王星日心黄道坐标
+ *
+ * 注意：此函数为新增辅助函数，将 calculatePlutoRectangular 的直角坐标
+ * 转换为球面坐标，以保持与其他行星接口一致。
+ * 原始 eph0.js 的 pluto_coord 函数仅返回直角坐标。
+ *
+ * @param t - 儒略世纪数 (J2000起算)
+ * @returns 冥王星日心黄道坐标 [黄经, 黄纬, 距离(AU)]
+ */
+function calculatePlutoHeliocentricCoord(t: number): SphericalCoord {
+  const [x, y, z] = calculatePlutoRectangular(t);
+
+  // 直角坐标转球坐标
+  const distance = Math.sqrt(x * x + y * y + z * z);
+  const lon = normalizeAngle(Math.atan2(y, x));
+  const lat = Math.asin(z / distance);
+
+  return [lon, lat, distance];
+}
+
+/**
  * 计算地球日心坐标
  * @see eph0.js:1020-1026 e_coord函数
  *
@@ -137,8 +386,7 @@ export function calculateEarthHeliocentricCoord(
  * 计算行星日心坐标
  * @see eph0.js:1002-1018 p_coord函数
  *
- * 注意: 完整实现需要各行星的VSOP87数据
- * 当前版本仅支持地球和太阳
+ * 使用 VSOP87 理论精确计算行星日心黄道坐标
  *
  * @param planet - 行星编号
  * @param t - 儒略世纪数 (J2000起算)
@@ -154,65 +402,46 @@ export function calculatePlanetHeliocentricCoord(
   n2: number = -1,
   n3: number = -1
 ): SphericalCoord {
-  switch (planet) {
-    case Planet.Earth:
-      return calculateEarthHeliocentricCoord(t, n1, n2, n3);
-
-    case Planet.Sun:
-      // 太阳在日心坐标系中位于原点
-      return [0, 0, 0];
-
-    default:
-      // 其他行星需要完整VSOP87数据
-      // 这里返回简化估算值 (用于演示)
-      return estimatePlanetPosition(planet, t);
-  }
-}
-
-/**
- * 简化行星位置估算 (基于开普勒轨道)
- *
- * 仅用于演示，精度较低
- *
- * @param planet - 行星编号
- * @param t - 儒略世纪数 (J2000起算)
- * @returns 估算的日心黄道坐标
- */
-function estimatePlanetPosition(planet: Planet, t: number): SphericalCoord {
-  // 行星轨道参数 (J2000.0)
-  // [平黄经(弧度), 平均运动(弧度/世纪), 轨道半长轴(AU), 轨道离心率, 轨道倾角(弧度)]
-  const orbitalElements: Record<number, number[]> = {
-    [Planet.Mercury]: [4.40261, 2608.7903, 0.387, 0.2056, 0.1222],
-    [Planet.Venus]: [3.17615, 1021.3286, 0.723, 0.0068, 0.0592],
-    [Planet.Mars]: [6.20348, 334.0613, 1.524, 0.0934, 0.0323],
-    [Planet.Jupiter]: [0.59955, 52.9691, 5.203, 0.0484, 0.0228],
-    [Planet.Saturn]: [0.87402, 21.3299, 9.537, 0.0542, 0.0434],
-    [Planet.Uranus]: [5.48129, 7.4782, 19.19, 0.0472, 0.0135],
-    [Planet.Neptune]: [5.31188, 3.8133, 30.07, 0.0086, 0.0309],
-  };
-
-  const elements = orbitalElements[planet];
-  if (!elements) {
-    return [0, 0, 1];
+  // 地球使用专门的计算函数
+  if (planet === Planet.Earth) {
+    return calculateEarthHeliocentricCoord(t, n1, n2, n3);
   }
 
-  const [L0, n, a] = elements;
+  // 太阳在日心坐标系中位于原点
+  if (planet === Planet.Sun) {
+    return [0, 0, 0];
+  }
 
-  // 平黄经
-  const L = normalizeAngle(L0 + n * t);
+  // 冥王星使用专门的计算方法
+  if (planet === Planet.Pluto) {
+    return calculatePlutoHeliocentricCoord(t);
+  }
 
-  // 简化: 假设圆轨道 (实际应解开普勒方程)
-  const lon = L;
-  const lat = 0; // 简化: 忽略轨道倾角
-  const r = a; // 简化: 忽略离心率
+  // 其他行星使用 VSOP87 数据
+  const config = PLANET_VSOP87_DATA[planet];
+  if (!config) {
+    // 未知行星，返回零值
+    return [0, 0, 0];
+  }
 
-  return [lon, lat, r];
+  // 计算黄经、黄纬、距离
+  let lon = calculateVSOP87Component(config.L, config.multiplier, t, n1);
+  let lat = calculateVSOP87Component(config.B, config.multiplier, t, n2);
+  let dist = calculateVSOP87Component(config.R, config.multiplier, t, n3);
+
+  // 应用修正项 (角秒转弧度)
+  const [lonCorr, latCorr, distCorr] = config.corrections;
+  lon += lonCorr / RAD_TO_ARCSEC;
+  lat += latCorr / RAD_TO_ARCSEC;
+  dist += distCorr / 1000000; // 10^-6 AU
+
+  return [normalizeAngle(lon), lat, dist];
 }
 
 /**
  * 计算行星地心坐标
  *
- * 将日心坐标转换为地心坐标
+ * 将日心坐标转换为地心坐标（新增辅助函数，非 eph0.js 原有）
  *
  * @param planet - 行星编号
  * @param t - 儒略世纪数 (J2000起算)
@@ -255,6 +484,8 @@ export function calculatePlanetGeocentricCoord(
 /**
  * 计算行星相位角 (地球-行星-太阳角)
  *
+ * 新增辅助函数，使用余弦定理计算
+ *
  * @param planet - 行星编号
  * @param t - 儒略世纪数 (J2000起算)
  * @returns 相位角 (弧度, 0-π)
@@ -285,6 +516,8 @@ export function calculatePlanetPhaseAngle(planet: Planet, t: number): number {
 
 /**
  * 计算行星视星等 (简化公式)
+ *
+ * 新增辅助函数，使用标准天文公式
  *
  * @param planet - 行星编号
  * @param t - 儒略世纪数 (J2000起算)
@@ -324,6 +557,8 @@ export function calculatePlanetMagnitude(planet: Planet, t: number): number {
 /**
  * 判断行星是否在顺行
  *
+ * 新增辅助函数，通过数值微分判断黄经变化方向
+ *
  * @param planet - 行星编号
  * @param t - 儒略世纪数 (J2000起算)
  * @returns true 表示顺行, false 表示逆行
@@ -353,6 +588,8 @@ export const SPEED_OF_LIGHT = 299792.458;
 
 /**
  * 计算行星光行时间
+ *
+ * 新增辅助函数，根据距离和光速计算
  *
  * @param distance - 距离 (AU)
  * @returns 光行时间 (天)

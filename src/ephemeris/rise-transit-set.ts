@@ -374,6 +374,8 @@ export function calculateMoonRiseTransitSet(
 /**
  * 计算昼长
  *
+ * 新增辅助函数
+ *
  * @param rts - 升中天落结果
  * @returns 昼长 (天)，极昼返回1，极夜返回0
  */
@@ -385,6 +387,8 @@ export function calculateDayLength(rts: RiseTransitSetResult): number {
 
 /**
  * 儒略日转时间字符串 (HH:MM:SS)
+ *
+ * 新增辅助函数
  *
  * @param jd - 儒略日
  * @returns 时间字符串
@@ -405,14 +409,14 @@ export function jdToTimeString(jd: number): string {
 }
 
 /**
- * 度数转弧度
+ * 度数转弧度 (新增辅助函数)
  */
 export function degreesToRadians(degrees: number): number {
   return degrees * (Math.PI / 180);
 }
 
 /**
- * 弧度转度数
+ * 弧度转度数 (新增辅助函数)
  */
 export function radiansToDegrees(radians: number): number {
   return radians * (180 / Math.PI);

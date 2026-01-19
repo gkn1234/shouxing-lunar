@@ -21,14 +21,16 @@ sed -n '700,800p' src-legacy/eph0.js
 
 | 索引 | 行星 | 英文 | 目标文件 | 状态 |
 |-----|------|------|----------|------|
-| 0 | 地球 | Earth | `vsop87-earth.ts` | ✅ 已完成 |
-| 1 | 水星 | Mercury | `vsop87-mercury.ts` | ✅ 已完成 |
-| 2 | 金星 | Venus | `vsop87-venus.ts` | ⏳ 待迁移 |
-| 3 | 火星 | Mars | `vsop87-mars.ts` | ⏳ 待迁移 |
-| 4 | 木星 | Jupiter | `vsop87-jupiter.ts` | ⏳ 待迁移 |
-| 5 | 土星 | Saturn | `vsop87-saturn.ts` | ⏳ 待迁移 |
-| 6 | 天王星 | Uranus | `vsop87-uranus.ts` | ⏳ 待迁移 |
-| 7 | 海王星 | Neptune | `vsop87-neptune.ts` | ⏳ 待迁移 |
+| 0 | 地球 | Earth | `earth.ts` | ✅ 已完成 |
+| 1 | 水星 | Mercury | `mercury.ts` | ✅ 已完成 |
+| 2 | 金星 | Venus | `venus.ts` | ✅ 已完成 |
+| 3 | 火星 | Mars | `mars.ts` | ✅ 已完成 |
+| 4 | 木星 | Jupiter | `jupiter.ts` | ✅ 已完成 |
+| 5 | 土星 | Saturn | `saturn.ts` | ✅ 已完成 |
+| 6 | 天王星 | Uranus | `uranus.ts` | ✅ 已完成 |
+| 7 | 海王星 | Neptune | `neptune.ts` | ✅ 已完成 |
+| - | 冥王星 | Pluto | `pluto.ts` | ✅ 已完成 |
+| - | 月球 | Moon | `moon.ts` | ✅ 已完成 |
 
 ## 每个行星数据的行号范围（eph0.js）
 
@@ -115,36 +117,41 @@ export const PLANET_B = [PLANET_B0, PLANET_B1, PLANET_B2, PLANET_B3, PLANET_B4, 
 export const PLANET_R = [PLANET_R0, PLANET_R1, PLANET_R2, PLANET_R3, PLANET_R4, PLANET_R5];
 ```
 
-## 数据提取步骤
+## 数据提取步骤（逐数组迁移法）
 
-### 1. 定位数据范围
+为节省上下文，采用逐数组迁移方式：
+
+### 第一步：创建空模板文件
+
+按照模板创建行星数据文件，所有数组保持为空：
+
+```typescript
+export const VENUS_L0: number[] = [];
+export const VENUS_L1: number[] = [];
+// ... 其他数组也为空
+```
+
+### 第二步：逐个数组填充数据
+
+对每个数组：
+1. 先确定该数组在 eph0.js 中的行号范围
+2. 只读取对应行数的数据
+3. 更新该数组
+4. 完成后再处理下一个数组
+
+**处理顺序**：L0 → L1 → L2 → L3 → L4 → L5 → B0 → B1 → ... → R5
+
+### 数据定位方法
 
 ```bash
-# 查看文件行数
-wc -l src-legacy/eph0.js
-
-# 搜索 XL0 定义
+# 搜索 XL0 定义位置
 grep -n "XL0\s*=" src-legacy/eph0.js
+
+# 读取特定行范围（示例）
+sed -n '700,750p' src-legacy/eph0.js
 ```
 
-### 2. 理解原始数据结构
-
-原始 `XL0[n]` 结构：
-- 前 19-20 个数字是索引表（INDEX）
-- 第一个数字通常是倍率（MULTIPLIER）
-- 剩余数据按索引表分割为 L0-L5, B0-B5, R0-R5
-
-### 3. 分段读取
-
-```bash
-# 示例：读取第 700-800 行
-sed -n '700,800p' src-legacy/eph0.js
-
-# 或使用 head/tail 组合
-head -n 800 src-legacy/eph0.js | tail -n 100
-```
-
-### 4. 数据拆分规则
+### 数据拆分规则
 
 根据 INDEX 数组拆分数据：
 - `data[INDEX[0]]` 到 `data[INDEX[1]-1]` → L0
@@ -166,9 +173,28 @@ head -n 800 src-legacy/eph0.js | tail -n 100
 
 完成数据迁移后，需要：
 
-1. 更新 `planet.ts` 使用实际 VSOP87 数据替代简化的开普勒轨道
-2. 在 `ephemeris/index.ts` 中导出新的数据模块
-3. 添加针对每个行星的精度测试
+1. ✅ 更新 `planet.ts` 使用实际 VSOP87 数据替代简化的开普勒轨道
+2. ✅ 在 `ephemeris/index.ts` 中导出新的数据模块
+3. ✅ 添加针对每个行星的精度测试
+
+## 数据文件位置
+
+所有数据文件已移动到 `src/data/vsop87/` 目录：
+
+```
+src/data/vsop87/
+├── index.ts      # 统一导出
+├── earth.ts      # 地球 VSOP87 数据
+├── mercury.ts    # 水星 VSOP87 数据
+├── venus.ts      # 金星 VSOP87 数据
+├── mars.ts       # 火星 VSOP87 数据
+├── jupiter.ts    # 木星 VSOP87 数据
+├── saturn.ts     # 土星 VSOP87 数据
+├── uranus.ts     # 天王星 VSOP87 数据
+├── neptune.ts    # 海王星 VSOP87 数据
+├── pluto.ts      # 冥王星数据 (独立算法)
+└── moon.ts       # 月球数据 (独立算法)
+```
 
 ## 参考资料
 

@@ -6,5 +6,8 @@ out
 /indexmp.htm
 
 node_modules
+dist
 
 src/.DS_Store
+
+*.local.*

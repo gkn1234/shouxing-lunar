@@ -18,7 +18,7 @@ import {
   EARTH_L,
   EARTH_B,
   EARTH_R,
-} from './vsop87-earth';
+} from '../data/vsop87/earth';
 
 /**
  * 计算 VSOP87 级数求和
@@ -234,7 +234,7 @@ export function calculateSolarAberration(t: number): number {
 /**
  * 计算太阳真黄经 (Date分点)
  *
- * 太阳真黄经 = 地球黄经 + π
+ * 新增辅助函数：太阳真黄经 = 地球黄经 + π
  *
  * @param t - 儒略世纪数 (J2000起算)
  * @param termCount - 计算项数 (-1 表示全部)
@@ -276,6 +276,8 @@ export function calculateSunApparentLongitude(
 
 /**
  * 计算太阳地心坐标 (视坐标)
+ *
+ * 新增辅助函数，组合视黄经、黄纬、距离
  *
  * @param t - 儒略世纪数 (J2000起算)
  * @param termCount - 计算项数 (-1 表示全部)
@@ -364,7 +366,7 @@ export function calculateTimeFromSunLongitude(targetLongitude: number): number {
  * // solarTerms[0] 是小寒, solarTerms[23] 是冬至
  * ```
  */
-export function calculateSolarTerms(year: number): number[] {
+export function calculateSolarTerms(_year: number): number[] {
   const terms: number[] = [];
 
   // 小寒开始, 黄经270° (即 3π/2)

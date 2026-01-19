@@ -15,7 +15,8 @@
 import { RAD } from '../core/constants';
 import { normalizeAngle, normalizeAngleSigned, SphericalCoord } from '../core/coordinate';
 import { calculateLongitudeNutation } from '../core/nutation';
-import { MOON_L, MOON_B, MOON_R } from './moon-data';
+import { MOON_L, MOON_B, MOON_R } from '../data/vsop87/moon';
+import { calculateSunApparentLongitude, calculateSunVelocity } from './sun';
 
 /**
  * 计算月球星历级数求和
@@ -347,6 +348,8 @@ export function calculateTimeFromMoonLongitude(targetLongitude: number): number 
 /**
  * 计算月球视坐标 (包含章动和光行差)
  *
+ * 新增辅助函数，组合各项修正
+ *
  * @param t - 儒略世纪数 (J2000起算)
  * @param termCount - 计算项数 (-1 表示全部)
  * @returns 月球视坐标 [视黄经, 视黄纬, 距离(km)]
@@ -380,6 +383,8 @@ export const MOON_MEAN_ANGULAR_RADIUS = 931.2;
 /**
  * 计算月球视半径
  *
+ * 新增辅助函数，视半径与距离成反比
+ *
  * @param distance - 月球距离 (km)
  * @returns 月球视半径 (弧度)
  */
@@ -398,3 +403,92 @@ export const MOON_PHASE_NAMES_CN = ['朔', '上弦', '望', '下弦'];
  * 月相名称 (英文)
  */
 export const MOON_PHASE_NAMES_EN = ['New Moon', 'First Quarter', 'Full Moon', 'Last Quarter'];
+
+/**
+ * 计算日月视黄经差
+ * @see eph0.js:1166-1168 MS_aLon函数
+ *
+ * 日月视黄经差 = 月球视黄经 - 太阳视黄经
+ * 当差值为0时为朔(新月)，为π时为望(满月)
+ *
+ * @param t - 儒略世纪数 (J2000起算)
+ * @param moonTermCount - 月球计算项数 (-1 表示全部)
+ * @param sunTermCount - 太阳计算项数 (-1 表示全部)
+ * @returns 日月视黄经差 (弧度)
+ */
+export function calculateMoonSunLongitudeDiff(
+  t: number,
+  moonTermCount: number = -1,
+  sunTermCount: number = -1
+): number {
+  const moonLon = calculateMoonApparentLongitude(t, moonTermCount);
+  const sunLon = calculateSunApparentLongitude(t, sunTermCount);
+
+  return normalizeAngle(moonLon - sunLon);
+}
+
+/**
+ * 已知日月视黄经差反求时间
+ * @see eph0.js:1190-1196 MS_aLon_t函数
+ *
+ * 使用迭代法求解给定日月视黄经差对应的时间
+ * 常用于计算朔望时刻
+ *
+ * @param targetDiff - 目标日月视黄经差 (弧度，0为朔，π为望)
+ * @returns 儒略世纪数 (J2000起算)
+ *
+ * @example
+ * ```ts
+ * // 求朔(新月)时刻
+ * const t = calculateTimeFromMoonSunDiff(0);
+ * // 求望(满月)时刻
+ * const t = calculateTimeFromMoonSunDiff(Math.PI);
+ * ```
+ */
+export function calculateTimeFromMoonSunDiff(targetDiff: number): number {
+  const v0 = 7771.37714500204; // 月日黄经差平均变化率
+
+  // 初始估计
+  let t = (targetDiff + 1.08472) / v0;
+
+  // 迭代精化
+  let v = calculateMoonVelocity(t) - calculateSunVelocity(t);
+  let diff = normalizeAngleSigned(targetDiff - calculateMoonSunLongitudeDiff(t, 3, 3));
+  t += diff / v;
+
+  v = calculateMoonVelocity(t) - calculateSunVelocity(t);
+  diff = normalizeAngleSigned(targetDiff - calculateMoonSunLongitudeDiff(t, 20, 10));
+  t += diff / v;
+
+  v = calculateMoonVelocity(t) - calculateSunVelocity(t);
+  diff = normalizeAngleSigned(targetDiff - calculateMoonSunLongitudeDiff(t, -1, 60));
+  t += diff / v;
+
+  return t;
+}
+
+/**
+ * 已知日月视黄经差反求时间 (低精度快速版)
+ * @see eph0.js:1221-1230 MS_aLon_t2函数
+ *
+ * 误差不超过600秒，适合初步估算
+ *
+ * @param targetDiff - 目标日月视黄经差 (弧度)
+ * @returns 儒略世纪数 (J2000起算)
+ */
+export function calculateTimeFromMoonSunDiffFast(targetDiff: number): number {
+  const v0 = 7771.37714500204;
+
+  let t = (targetDiff + 1.08472) / v0;
+  const t2 = t * t;
+
+  // 快速修正
+  t -=
+    (-0.00003309 * t2 +
+      0.10976 * Math.cos(0.784758 + 8328.6914246 * t + 0.000152292 * t2) +
+      0.02224 * Math.cos(0.1874 + 7214.0628654 * t - 0.00021848 * t2) -
+      0.03342 * Math.cos(4.669257 + 628.307585 * t)) /
+    v0;
+
+  return t;
+}

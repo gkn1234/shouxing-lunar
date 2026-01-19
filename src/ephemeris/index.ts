@@ -31,7 +31,7 @@ export {
   EARTH_L,
   EARTH_B,
   EARTH_R,
-} from './vsop87-earth';
+} from '../data/vsop87/earth';
 
 // 月球位置计算
 export {
@@ -46,6 +46,9 @@ export {
   calculateTimeFromMoonLongitude,
   calculateMoonApparentCoord,
   calculateMoonAngularRadius,
+  calculateMoonSunLongitudeDiff,
+  calculateTimeFromMoonSunDiff,
+  calculateTimeFromMoonSunDiffFast,
   MOON_MEAN_DISTANCE,
   MOON_MEAN_ANGULAR_RADIUS,
   MOON_PHASE_NAMES_CN,
@@ -53,7 +56,7 @@ export {
 } from './moon';
 
 // 月球数据
-export { MOON_L, MOON_B, MOON_R } from './moon-data';
+export { MOON_L, MOON_B, MOON_R } from '../data/vsop87/moon';
 
 // 行星位置计算
 export {
