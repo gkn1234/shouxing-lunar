@@ -13,17 +13,17 @@ import { calculateLunarYear } from './calendar';
 /**
  * 十天干
  */
-export const TIAN_GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+export const TIAN_GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'] as const;
 
 /**
  * 十二地支
  */
-export const DI_ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+export const DI_ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'] as const;
 
 /**
  * 十二生肖
  */
-export const SHENG_XIAO = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'];
+export const SHENG_XIAO = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'] as const;
 
 /**
  * 十二星座
@@ -41,7 +41,7 @@ export const XING_ZUO = [
   '天秤',
   '天蝎',
   '射手',
-];
+] as const;
 
 /**
  * 干支信息
@@ -296,7 +296,7 @@ export function ganZhiToIndex(ganZhi: string): number {
 /**
  * 六十甲子表
  */
-export const JIA_ZI_TABLE: string[] = [];
+export const JIA_ZI_TABLE: readonly string[] = [];
 for (let i = 0; i < 60; i++) {
-  JIA_ZI_TABLE.push(TIAN_GAN[i % 10] + DI_ZHI[i % 12]);
+  (JIA_ZI_TABLE as string[]).push(TIAN_GAN[i % 10] + DI_ZHI[i % 12]);
 }

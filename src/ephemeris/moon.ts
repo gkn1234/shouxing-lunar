@@ -354,12 +354,12 @@ export function calculateMoonAngularRadius(distance: number): number {
 /**
  * 月相名称 (中文)
  */
-export const MOON_PHASE_NAMES_CN = ['朔', '上弦', '望', '下弦'];
+export const MOON_PHASE_NAMES_CN = ['朔', '上弦', '望', '下弦'] as const;
 
 /**
  * 月相名称 (英文)
  */
-export const MOON_PHASE_NAMES_EN = ['New Moon', 'First Quarter', 'Full Moon', 'Last Quarter'];
+export const MOON_PHASE_NAMES_EN = ['New Moon', 'First Quarter', 'Full Moon', 'Last Quarter'] as const;
 
 /**
  * 计算日月视黄经差

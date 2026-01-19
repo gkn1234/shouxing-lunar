@@ -96,7 +96,7 @@ export const PLANET_NAMES_CN = [
   '海王星',
   '冥王星',
   '太阳',
-];
+] as const;
 
 /**
  * 行星名称 (英文)
@@ -112,7 +112,7 @@ export const PLANET_NAMES_EN = [
   'Neptune',
   'Pluto',
   'Sun',
-];
+] as const;
 
 /**
  * 行星星历修正表
@@ -121,7 +121,7 @@ export const PLANET_NAMES_EN = [
  * 每行3个值: [黄经修正(角秒), 黄纬修正(角秒), 距离修正(10^-6 AU)]
  * 顺序: 水星、金星、火星、木星、土星、天王星、海王星
  */
-export const PLANET_CORRECTIONS = [
+export const PLANET_CORRECTIONS: readonly (readonly number[])[] = [
   [-0.08631, +0.00039, -0.00008], // 水星 Mercury
   [-0.07447, +0.00006, +0.00017], // 金星 Venus
   [-0.07135, -0.00026, -0.00176], // 火星 Mars
@@ -129,7 +129,7 @@ export const PLANET_CORRECTIONS = [
   [-0.25486, +0.00276, +0.42926], // 土星 Saturn
   [+0.24588, +0.00345, -14.46266], // 天王星 Uranus
   [-0.95116, +0.02481, +58.30651], // 海王星 Neptune
-];
+] as const;
 
 /**
  * 行星会合周期 (天)
@@ -144,7 +144,7 @@ export const PLANET_SYNODIC_PERIODS = [
   378, // 土星
   370, // 天王星
   367, // 海王星
-];
+] as const;
 
 /**
  * 行星轨道周期 (年)
@@ -158,7 +158,7 @@ export const PLANET_ORBITAL_PERIODS = [
   29.46, // 土星
   84.01, // 天王星
   164.8, // 海王星
-];
+] as const;
 
 /**
  * 行星 VSOP87 数据配置

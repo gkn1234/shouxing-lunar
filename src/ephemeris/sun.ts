@@ -384,7 +384,7 @@ export const SOLAR_TERM_NAMES_CN = [
   '小雪',
   '大雪',
   '冬至',
-];
+] as const;
 
 /**
  * 二十四节气名称 (英文)
@@ -414,4 +414,4 @@ export const SOLAR_TERM_NAMES_EN = [
   'Minor Snow',
   'Major Snow',
   'Winter Solstice',
-];
+] as const;
