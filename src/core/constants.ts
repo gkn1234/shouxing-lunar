@@ -83,7 +83,7 @@ export const CS_S_SUN = 959.64;
 // @see eph0.js:24-25
 
 /** 行星会合周期 (天) @see eph0.js:24 */
-export const PLANET_SYNODIC_PERIODS = [116, 584, 780, 399, 378, 370, 367, 367];
+export const PLANET_SYNODIC_PERIODS = [116, 584, 780, 399, 378, 370, 367, 367] as const;
 
 /** 行星名称 (中文) @see eph0.js:25 */
 export const PLANET_NAMES_CN = [
@@ -96,7 +96,7 @@ export const PLANET_NAMES_CN = [
   '天王星',
   '海王星',
   '冥王星',
-];
+] as const;
 
 /** 行星名称 (英文) */
 export const PLANET_NAMES_EN = [
@@ -109,13 +109,13 @@ export const PLANET_NAMES_EN = [
   'Uranus',
   'Neptune',
   'Pluto',
-];
+] as const;
 
 // ==================== 星期名称 ====================
 // @see eph0.js:380
 
 /** 星期名称 (中文) @see eph0.js:380 */
-export const WEEK_NAMES_CN = ['日', '一', '二', '三', '四', '五', '六'];
+export const WEEK_NAMES_CN = ['日', '一', '二', '三', '四', '五', '六'] as const;
 
 /** 星期名称 (英文) */
 export const WEEK_NAMES_EN = [
@@ -126,4 +126,4 @@ export const WEEK_NAMES_EN = [
   'Thursday',
   'Friday',
   'Saturday',
-];
+] as const;
