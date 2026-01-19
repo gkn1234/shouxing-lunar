@@ -1,8 +1,25 @@
 /**
- * Astronomy module - 天文模块
+ * Astronomy module - 天文模块 (对外API)
  *
- * 包含天体位置、升降时刻等天文计算功能
+ * 来源：寿星万年历
+ * 提供简化的天文计算 API
  */
 
-// TODO: Export astronomy functions
-export {};
+export {
+  ObserverLocation,
+  CelestialPosition,
+  SunTimes,
+  MoonTimes,
+  MoonPhaseInfo,
+  getSunPosition,
+  getMoonPosition,
+  getPlanetPosition,
+  getSunTimes,
+  getMoonTimes,
+  getMoonPhase,
+  getSolarTerms,
+  Planet,
+  PLANET_NAMES_CN,
+  SOLAR_TERM_NAMES_CN,
+  MOON_PHASE_NAMES_CN,
+} from './astronomy';

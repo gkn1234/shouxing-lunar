@@ -19,6 +19,18 @@ export {
   getLunarEclipseTypeName,
 } from './lunar-eclipse';
 
-// TODO: 日食计算
-// export { ... } from './solar-eclipse';
+// 日食计算
+export {
+  SolarEclipseType,
+  SolarEclipseQuickResult,
+  SolarEclipseInfo,
+  searchSolarEclipseFast,
+  calculateSolarEclipse,
+  findSolarEclipses,
+  findNextSolarEclipse,
+  getSolarEclipseTypeName,
+  isCentralEclipse,
+  isTotalEclipse,
+  isAnnularEclipse,
+} from './solar-eclipse';
 
