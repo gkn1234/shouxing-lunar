@@ -155,6 +155,57 @@ describe('天文API - Astronomy API', () => {
       const dayLength = (times.set!.getTime() - times.rise!.getTime()) / (1000 * 3600);
       expect(dayLength).toBeLessThan(10); // 北京冬至昼长约9-10小时
     });
+
+    it('应返回民用晨昏光时刻', () => {
+      const date = new Date('2024-06-21');
+      const times = getSunTimes(date, beijing);
+
+      expect(times.civilDawn).toBeInstanceOf(Date);
+      expect(times.civilDusk).toBeInstanceOf(Date);
+      // 民用晨光始应早于日出
+      expect(times.civilDawn!.getTime()).toBeLessThan(times.rise!.getTime());
+      // 民用昏影终应晚于日落
+      expect(times.civilDusk!.getTime()).toBeGreaterThan(times.set!.getTime());
+    });
+
+    it('应返回航海晨昏光时刻', () => {
+      const date = new Date('2024-06-21');
+      const times = getSunTimes(date, beijing);
+
+      expect(times.nauticalDawn).toBeInstanceOf(Date);
+      expect(times.nauticalDusk).toBeInstanceOf(Date);
+      // 航海晨光始应早于民用晨光始
+      expect(times.nauticalDawn!.getTime()).toBeLessThan(times.civilDawn!.getTime());
+      // 航海昏影终应晚于民用昏影终
+      expect(times.nauticalDusk!.getTime()).toBeGreaterThan(times.civilDusk!.getTime());
+    });
+
+    it('应返回天文晨昏光时刻', () => {
+      const date = new Date('2024-06-21');
+      const times = getSunTimes(date, beijing);
+
+      expect(times.astronomicalDawn).toBeInstanceOf(Date);
+      expect(times.astronomicalDusk).toBeInstanceOf(Date);
+      // 天文晨光始应早于航海晨光始
+      expect(times.astronomicalDawn!.getTime()).toBeLessThan(times.nauticalDawn!.getTime());
+      // 天文昏影终应晚于航海昏影终
+      expect(times.astronomicalDusk!.getTime()).toBeGreaterThan(times.nauticalDusk!.getTime());
+    });
+
+    it('晨昏光顺序应正确', () => {
+      const date = new Date('2024-03-20'); // 春分，日照时间适中
+      const times = getSunTimes(date, beijing);
+
+      // 早晨顺序：天文晨光 < 航海晨光 < 民用晨光 < 日出
+      expect(times.astronomicalDawn!.getTime()).toBeLessThan(times.nauticalDawn!.getTime());
+      expect(times.nauticalDawn!.getTime()).toBeLessThan(times.civilDawn!.getTime());
+      expect(times.civilDawn!.getTime()).toBeLessThan(times.rise!.getTime());
+
+      // 傍晚顺序：日落 < 民用昏影 < 航海昏影 < 天文昏影
+      expect(times.set!.getTime()).toBeLessThan(times.civilDusk!.getTime());
+      expect(times.civilDusk!.getTime()).toBeLessThan(times.nauticalDusk!.getTime());
+      expect(times.nauticalDusk!.getTime()).toBeLessThan(times.astronomicalDusk!.getTime());
+    });
   });
 
   describe('getMoonTimes', () => {

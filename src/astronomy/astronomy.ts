@@ -21,6 +21,11 @@ import {
   equatorialToHorizontal,
   calculateGST,
 } from '../ephemeris/rise-transit-set';
+import {
+  calculateCivilTwilight,
+  calculateNauticalTwilight,
+  calculateAstronomicalTwilight,
+} from '../ephemeris/twilight';
 import { calculateNutation } from '../core/nutation';
 import { calculateObliquity } from '../core/precession';
 import { gregorianToJD, jdToGregorian } from '../core/julian';
@@ -63,16 +68,24 @@ export interface CelestialPosition {
  * 日出日落时刻
  */
 export interface SunTimes {
-  /** 日出时刻 (Date) */
+  /** 日出时刻 */
   rise: Date | null;
-  /** 中天时刻 (Date) */
+  /** 中天时刻 */
   transit: Date | null;
-  /** 日落时刻 (Date) */
+  /** 日落时刻 */
   set: Date | null;
-  /** 民用晨光始 (Date) */
+  /** 民用晨光始（太阳在地平线下6°） */
   civilDawn: Date | null;
-  /** 民用昏影终 (Date) */
+  /** 民用昏影终（太阳在地平线下6°） */
   civilDusk: Date | null;
+  /** 航海晨光始（太阳在地平线下12°） */
+  nauticalDawn: Date | null;
+  /** 航海昏影终（太阳在地平线下12°） */
+  nauticalDusk: Date | null;
+  /** 天文晨光始（太阳在地平线下18°） */
+  astronomicalDawn: Date | null;
+  /** 天文昏影终（太阳在地平线下18°） */
+  astronomicalDusk: Date | null;
 }
 
 /**
@@ -313,19 +326,24 @@ export function getPlanetPosition(
 export function getSunTimes(date: Date | string, location: ObserverLocation): SunTimes {
   const jd = dateToJd(date);
   const jd0 = Math.floor(jd - 0.5) + 0.5; // 当天0时
+  const lonRad = (location.longitude / 180) * Math.PI;
+  const latRad = (location.latitude / 180) * Math.PI;
 
-  const result = calculateSunRiseTransitSet(
-    jd0 - J2000,
-    (location.longitude / 180) * Math.PI,
-    (location.latitude / 180) * Math.PI
-  );
+  const result = calculateSunRiseTransitSet(jd0 - J2000, lonRad, latRad);
+  const civil = calculateCivilTwilight(jd0 - J2000, lonRad, latRad);
+  const nautical = calculateNauticalTwilight(jd0 - J2000, lonRad, latRad);
+  const astronomical = calculateAstronomicalTwilight(jd0 - J2000, lonRad, latRad);
 
   return {
     rise: !isNaN(result.rise) ? jdToDate(result.rise + J2000) : null,
     transit: !isNaN(result.transit) ? jdToDate(result.transit + J2000) : null,
     set: !isNaN(result.set) ? jdToDate(result.set + J2000) : null,
-    civilDawn: null, // TODO: 实现民用晨光
-    civilDusk: null, // TODO: 实现民用昏影
+    civilDawn: civil.dawn !== null ? jdToDate(civil.dawn + J2000) : null,
+    civilDusk: civil.dusk !== null ? jdToDate(civil.dusk + J2000) : null,
+    nauticalDawn: nautical.dawn !== null ? jdToDate(nautical.dawn + J2000) : null,
+    nauticalDusk: nautical.dusk !== null ? jdToDate(nautical.dusk + J2000) : null,
+    astronomicalDawn: astronomical.dawn !== null ? jdToDate(astronomical.dawn + J2000) : null,
+    astronomicalDusk: astronomical.dusk !== null ? jdToDate(astronomical.dusk + J2000) : null,
   };
 }
 
