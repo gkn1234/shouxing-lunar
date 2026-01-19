@@ -11,7 +11,11 @@
  */
 
 import { J2000 } from '../core/constants';
+import { LRUCache } from '../core/cache';
 import { calculateShuoQi, LUNAR_MONTH_NAMES } from './solar-term';
+
+// 年历缓存（容量100年）
+const yearDataCache = new LRUCache<number, LunarYearData>(100);
 
 /**
  * 农历年历数据
@@ -32,7 +36,7 @@ export interface LunarYearData {
 }
 
 /**
- * 计算农历年历
+ * 计算农历年历（带缓存）
  * @see lunar.js:609-676 SSQ.calcY函数
  *
  * 农历排月序计算，有效范围：两个冬至之间
@@ -41,6 +45,32 @@ export interface LunarYearData {
  * @returns 农历年历数据
  */
 export function calculateLunarYear(jd: number): LunarYearData {
+  // 估算年份作为缓存键
+  const year = Math.floor((jd + 10 + 180) / 365.2422) + 2000;
+
+  // 尝试从缓存获取
+  const cached = yearDataCache.get(year);
+  if (cached && jd >= cached.zhongQi[0] && jd < cached.zhongQi[24]) {
+    return cached;
+  }
+
+  // 缓存未命中，进行计算
+  const result = calculateLunarYearInternal(jd);
+
+  // 存入缓存
+  yearDataCache.set(result.year, result);
+
+  return result;
+}
+
+/**
+ * 实际计算函数（无缓存）
+ * @see lunar.js:609-676 SSQ.calcY函数
+ *
+ * @param jd - 参考儒略日 (J2000起算)
+ * @returns 农历年历数据
+ */
+function calculateLunarYearInternal(jd: number): LunarYearData {
   const zhongQi: number[] = [];
   const heSuo: number[] = [];
   const monthDays: number[] = [];
@@ -230,7 +260,7 @@ export interface LunarDateInfo {
   monthDays: number;
 }
 
-// 缓存当前年历数据
+// 缓存当前年历数据（保留用于 getLunarDateInfo 的局部优化）
 let cachedYearData: LunarYearData | null = null;
 
 /**
@@ -297,8 +327,24 @@ export function getLunarDateInfo(jd: number): LunarDateInfo {
 }
 
 /**
+ * 获取年历缓存统计信息
+ *
+ * @returns 缓存统计信息对象
+ */
+export function getLunarYearCacheStats(): {
+  size: number;
+  capacity: number;
+  hits: number;
+  misses: number;
+  hitRate: number;
+} {
+  return yearDataCache.getStats();
+}
+
+/**
  * 清除年历缓存
  */
 export function clearLunarYearCache(): void {
+  yearDataCache.clear();
   cachedYearData = null;
 }
