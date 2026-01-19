@@ -40,7 +40,7 @@ export interface DynastyInfo {
 /**
  * 中国主要朝代列表
  */
-export const DYNASTIES: DynastyInfo[] = [
+export const DYNASTIES: readonly DynastyInfo[] = [
   { name: '夏', startYear: -2070, endYear: -1600, capital: '阳城' },
   { name: '商', startYear: -1600, endYear: -1046, capital: '殷' },
   { name: '西周', startYear: -1046, endYear: -771, capital: '镐京' },

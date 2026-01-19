@@ -115,7 +115,7 @@ const PROVINCE_DATA: Record<string, string> = {
 /**
  * 省份列表
  */
-export const PROVINCES = Object.keys(PROVINCE_DATA);
+export const PROVINCES: readonly string[] = Object.keys(PROVINCE_DATA);
 
 /**
  * 解析城市数据
