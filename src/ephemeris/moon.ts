@@ -15,52 +15,9 @@
 import { RAD } from '../core/constants';
 import { normalizeAngle, normalizeAngleSigned, SphericalCoord } from '../core/coordinate';
 import { calculateLongitudeNutation } from '../core/nutation';
+import { calculateMoonSeries } from '../core/series';
 import { MOON_L, MOON_B, MOON_R } from '../data/vsop87/moon';
 import { calculateSunApparentLongitude, calculateSunVelocity } from './sun';
-
-/**
- * 计算月球星历级数求和
- * @see eph0.js:1031-1050 XL1_calc函数
- *
- * 使用6系数格式: A * cos(B + C*t + D*t²/10000 + E*t³/10⁸ + F*t⁴/10⁸)
- *
- * @param data - 级数数据数组 [A, B, C, D, E, F, ...]
- * @param t - 儒略世纪数 (J2000起算)
- * @param termCount - 计算项数 (-1 表示全部)
- * @returns 级数求和结果
- */
-function calculateMoonSeries(
-  data: number[],
-  t: number,
-  termCount: number = -1
-): number {
-  if (data.length === 0) return 0;
-
-  const totalTerms = Math.floor(data.length / 6);
-  const n = termCount < 0 ? totalTerms : Math.min(termCount, totalTerms);
-
-  // 预计算 t 的幂次
-  // @see eph0.js:1035 t2/=1e4,t3/=1e8,t4/=1e8
-  const t2 = (t * t) / 1e4;
-  const t3 = (t * t * t) / 1e8;
-  const t4 = (t * t * t * t) / 1e8;
-
-  let sum = 0;
-  for (let i = 0; i < n; i++) {
-    const idx = i * 6;
-    const A = data[idx]; // 振幅
-    const B = data[idx + 1]; // 相位
-    const C = data[idx + 2]; // 频率
-    const D = data[idx + 3]; // t² 系数
-    const E = data[idx + 4]; // t³ 系数
-    const F = data[idx + 5]; // t⁴ 系数
-
-    const phase = B + C * t + D * t2 + E * t3 + F * t4;
-    sum += A * Math.cos(phase);
-  }
-
-  return sum;
-}
 
 /**
  * 计算月球黄经 (几何黄经)
