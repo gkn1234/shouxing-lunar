@@ -13,43 +13,13 @@
 import { RAD } from '../core/constants';
 import { normalizeAngle, normalizeAngleSigned, SphericalCoord } from '../core/coordinate';
 import { calculateLongitudeNutation } from '../core/nutation';
+import { calculateVSOP87Series } from '../core/series';
 import {
   EARTH_MULTIPLIER,
   EARTH_L,
   EARTH_B,
   EARTH_R,
 } from '../data/vsop87/earth';
-
-/**
- * 计算 VSOP87 级数求和
- * @see eph0.js:955-981 XL0_calc函数
- *
- * @param data - 级数数据数组 [振幅, 相位, 频率, ...]
- * @param t - 儒略千年数 (J2000起算)
- * @param termCount - 计算项数 (-1 表示全部)
- * @returns 级数求和结果
- */
-function calculateVSOP87Series(
-  data: number[],
-  t: number,
-  termCount: number = -1
-): number {
-  if (data.length === 0) return 0;
-
-  const totalTerms = data.length / 3;
-  const n = termCount < 0 ? totalTerms : Math.min(termCount, totalTerms);
-
-  let sum = 0;
-  for (let i = 0; i < n; i++) {
-    const idx = i * 3;
-    const amplitude = data[idx];
-    const phase = data[idx + 1];
-    const frequency = data[idx + 2];
-    sum += amplitude * Math.cos(phase + frequency * t);
-  }
-
-  return sum;
-}
 
 /**
  * 计算地球黄经坐标分量
