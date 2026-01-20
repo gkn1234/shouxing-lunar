@@ -12,29 +12,6 @@
  * - data: 数据模块（城市坐标、历史纪年等）
  */
 
-// ==================== 命名空间导出 ====================
-import * as coreModule from './core';
-import * as lunarModule from './lunar';
-import * as ephemerisModule from './ephemeris';
-import * as eclipseModule from './eclipse';
-import * as astronomyModule from './astronomy';
-import * as dataModule from './data';
-
-/** 核心模块 */
-export const core = coreModule;
-/** 农历模块 */
-export const lunar = lunarModule;
-/** 星历模块 */
-export const ephemeris = ephemerisModule;
-/** 日月食模块 */
-export const eclipse = eclipseModule;
-/** 天文模块 */
-export const astronomy = astronomyModule;
-/** 数据模块 */
-export const data = dataModule;
-
-// ==================== 扁平导出（向下兼容） ====================
-
 // 核心模块
 export * from './core';
 
@@ -101,6 +78,13 @@ export {
   jdToTimeString,
   degreesToRadians,
   radiansToDegrees,
+  // 晨昏光计算
+  TwilightType,
+  TwilightTimes,
+  calculateTwilight,
+  calculateCivilTwilight,
+  calculateNauticalTwilight,
+  calculateAstronomicalTwilight,
 } from './ephemeris';
 
 // 日月食模块
