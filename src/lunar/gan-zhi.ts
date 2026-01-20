@@ -275,8 +275,8 @@ export function getFullGanZhi(jd: number): FullGanZhiInfo {
 export function ganZhiToIndex(ganZhi: string): number {
   if (ganZhi.length !== 2) return -1;
 
-  const ganIndex = TIAN_GAN.indexOf(ganZhi[0]);
-  const zhiIndex = DI_ZHI.indexOf(ganZhi[1]);
+  const ganIndex = TIAN_GAN.indexOf(ganZhi[0] as typeof TIAN_GAN[number]);
+  const zhiIndex = DI_ZHI.indexOf(ganZhi[1] as typeof DI_ZHI[number]);
 
   if (ganIndex === -1 || zhiIndex === -1) return -1;
 

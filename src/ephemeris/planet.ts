@@ -168,7 +168,7 @@ interface PlanetVSOP87Config {
   L: number[][];
   B: number[][];
   R: number[][];
-  corrections: number[]; // [黄经修正, 黄纬修正, 距离修正]
+  corrections: readonly number[]; // [黄经修正, 黄纬修正, 距离修正]
 }
 
 /**

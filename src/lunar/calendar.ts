@@ -142,7 +142,7 @@ function calculateLunarYearInternal(jd: number): LunarYearData {
   for (let i = 0; i < 14; i++) {
     const firstDayAbsoluteJd = heSuo[i] + J2000; // 初一的绝对儒略日
     const monthBuildIndex = Number(monthNames[i]); // 月建序号
-    let monthChar = LUNAR_MONTH_NAMES[monthBuildIndex % 12]; // 默认月名称
+    let monthChar: string = LUNAR_MONTH_NAMES[monthBuildIndex % 12]; // 默认月名称
 
     // 历史特殊时期的月名称修正
     if (firstDayAbsoluteJd >= 1724360 && firstDayAbsoluteJd <= 1729794) {
