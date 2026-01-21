@@ -18,6 +18,9 @@ export * from './core';
 // 农历模块
 export * from './lunar';
 
+// 天文历表模块 - 类型导出
+export type { RiseTransitSetResult, TwilightTimes } from './ephemeris';
+
 // 天文历表模块 (选择性导出避免与 astronomy 冲突)
 export {
   // 太阳计算
@@ -64,7 +67,6 @@ export {
   AU_TO_KM,
   SPEED_OF_LIGHT,
   // 升中天落计算
-  RiseTransitSetResult,
   HorizonType,
   HORIZON_CORRECTIONS,
   calculateGST,
@@ -80,7 +82,6 @@ export {
   radiansToDegrees,
   // 晨昏光计算
   TwilightType,
-  TwilightTimes,
   calculateTwilight,
   calculateCivilTwilight,
   calculateNauticalTwilight,
@@ -90,13 +91,17 @@ export {
 // 日月食模块
 export * from './eclipse';
 
-// 简化天文API (用户友好的高级接口)
-export {
+// 简化天文API - 类型导出
+export type {
   ObserverLocation,
   CelestialPosition,
   SunTimes,
   MoonTimes,
   MoonPhaseInfo,
+} from './astronomy';
+
+// 简化天文API (用户友好的高级接口)
+export {
   getSunPosition,
   getMoonPosition,
   getPlanetPosition,
@@ -106,10 +111,12 @@ export {
   getSolarTerms,
 } from './astronomy';
 
+// 数据模块 - 类型导出
+export type { CityInfo, EraInfo, DynastyInfo } from './data';
+
 // 数据模块
 export {
   // 城市数据
-  CityInfo,
   decodeCoordinates,
   encodeCoordinates,
   PROVINCES,
@@ -119,8 +126,6 @@ export {
   getAllCities,
   MAJOR_CITIES,
   // 历史纪年
-  EraInfo,
-  DynastyInfo,
   DYNASTIES,
   getEraData,
   findEraByYear,

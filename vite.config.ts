@@ -13,17 +13,17 @@ export default defineConfig({
     lib: {
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
-        lunar: resolve(__dirname, 'src/lunar/index.ts'),
-        eclipse: resolve(__dirname, 'src/eclipse/index.ts'),
-        astronomy: resolve(__dirname, 'src/astronomy/index.ts'),
-        data: resolve(__dirname, 'src/data/index.ts'),
+        'core/index': resolve(__dirname, 'src/core/index.ts'),
+        'lunar/index': resolve(__dirname, 'src/lunar/index.ts'),
+        'eclipse/index': resolve(__dirname, 'src/eclipse/index.ts'),
+        'ephemeris/index': resolve(__dirname, 'src/ephemeris/index.ts'),
+        'astronomy/index': resolve(__dirname, 'src/astronomy/index.ts'),
+        'data/index': resolve(__dirname, 'src/data/index.ts'),
       },
-      formats: ['es', 'cjs', 'umd'],
-      name: 'YhjsLunar',
+      formats: ['es', 'cjs'],
       fileName: (format, entryName) => {
         if (format === 'es') return `${entryName}.js`;
-        if (format === 'cjs') return `${entryName}.cjs`;
-        return `${entryName}.umd.js`;
+        return `${entryName}.cjs`;
       },
     },
     rollupOptions: {

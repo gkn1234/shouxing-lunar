@@ -7,10 +7,11 @@
 // 核心类
 export { LunarDate, lunar } from './lunar-date';
 
+// 日历计算 - 类型导出
+export type { LunarYearData, LunarDateInfo } from './calendar';
+
 // 日历计算
 export {
-  LunarYearData,
-  LunarDateInfo,
   calculateLunarYear,
   getLunarDateInfo,
   clearLunarYearCache,
@@ -31,13 +32,15 @@ export {
   MOON_PHASE_NAMES,
 } from './solar-term';
 
+// 干支计算 - 类型导出
+export type { GanZhiInfo, FullGanZhiInfo } from './gan-zhi';
+
 // 干支计算
 export {
   TIAN_GAN,
   DI_ZHI,
   SHENG_XIAO,
   XING_ZUO,
-  GanZhiInfo,
   getGanZhi,
   getYearGanZhi,
   getYearGanZhiBySpring,
@@ -47,15 +50,16 @@ export {
   getShengXiao,
   getXingZuo,
   getFullGanZhi,
-  FullGanZhiInfo,
   ganZhiToIndex,
   JIA_ZI_TABLE,
 } from './gan-zhi';
 
+// 节日数据 - 类型导出
+export type { FestivalInfo, DateFestivals } from './festival';
+
 // 节日数据
 export {
   FestivalType,
-  FestivalInfo,
   SOLAR_FESTIVALS,
   LUNAR_FESTIVALS,
   WEEK_FESTIVALS,
@@ -63,5 +67,4 @@ export {
   getLunarFestivals,
   getWeekFestivals,
   getAllFestivals,
-  DateFestivals,
 } from './festival';

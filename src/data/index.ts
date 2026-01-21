@@ -5,9 +5,11 @@
  * 包含城市经纬度、历史纪年等数据
  */
 
+// 城市数据 - 类型导出
+export type { CityInfo } from './cities';
+
 // 城市数据
 export {
-  CityInfo,
   decodeCoordinates,
   encodeCoordinates,
   PROVINCES,
@@ -18,10 +20,11 @@ export {
   MAJOR_CITIES,
 } from './cities';
 
+// 历史纪年数据 - 类型导出
+export type { EraInfo, DynastyInfo } from './eras';
+
 // 历史纪年数据
 export {
-  EraInfo,
-  DynastyInfo,
   DYNASTIES,
   getEraData,
   findEraByYear,

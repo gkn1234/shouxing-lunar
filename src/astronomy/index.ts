@@ -5,12 +5,15 @@
  * 提供简化的天文计算 API
  */
 
-export {
+export type {
   ObserverLocation,
   CelestialPosition,
   SunTimes,
   MoonTimes,
   MoonPhaseInfo,
+} from './astronomy';
+
+export {
   getSunPosition,
   getMoonPosition,
   getPlanetPosition,

@@ -77,8 +77,8 @@ export {
 } from './planet';
 
 // 升中天落计算
+export type { RiseTransitSetResult } from './rise-transit-set';
 export {
-  RiseTransitSetResult,
   HorizonType,
   HORIZON_CORRECTIONS,
   calculateGST,
@@ -95,9 +95,9 @@ export {
 } from './rise-transit-set';
 
 // 晨昏光计算
+export type { TwilightTimes } from './twilight';
 export {
   TwilightType,
-  TwilightTimes,
   calculateTwilight,
   calculateCivilTwilight,
   calculateNauticalTwilight,
