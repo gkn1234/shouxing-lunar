@@ -136,8 +136,8 @@ describe('儒略日精度验证 - 《天文算法》标准测试值', () => {
     standardTestCases.forEach(({ description, year, month, day, expectedJD }) => {
       it(`${description} => JD ${expectedJD}`, () => {
         const actualJD = gregorianToJD(year, month, day);
-        // 精度要求：至少小数点后1位
-        expect(actualJD).toBeCloseTo(expectedJD, 1);
+        // 精度要求：至少小数点后5位（约0.86秒精度）
+        expect(actualJD).toBeCloseTo(expectedJD, 5);
       });
     });
   });
@@ -231,9 +231,17 @@ describe('儒略日边界情况测试', () => {
   });
 
   describe('未来年份测试', () => {
+    /**
+     * 儒略日边界值常量
+     * JD_3000_JAN_1: 公元3000年1月1日12时的儒略日约为2816787.5
+     * JD_5000_JAN_1: 公元5000年1月1日12时的儒略日约为3547578.5
+     */
+    const JD_3000_JAN_1 = 2816787; // 公元3000年1月1日0时的儒略日下界
+    const JD_5000_JAN_1 = 3547000; // 公元5000年1月1日0时的儒略日下界
+
     it('公元3000年', () => {
       const jd = gregorianToJD(3000, 1, 1.5);
-      expect(jd).toBeGreaterThan(2816787); // 约为3000年初的JD
+      expect(jd).toBeGreaterThan(JD_3000_JAN_1);
 
       const result = jdToGregorian(jd);
       expect(result.year).toBe(3000);
@@ -243,7 +251,7 @@ describe('儒略日边界情况测试', () => {
 
     it('公元5000年', () => {
       const jd = gregorianToJD(5000, 6, 15.5);
-      expect(jd).toBeGreaterThan(3547000);
+      expect(jd).toBeGreaterThan(JD_5000_JAN_1);
 
       const result = jdToGregorian(jd);
       expect(result.year).toBe(5000);
@@ -259,9 +267,13 @@ describe('儒略日边界情况测试', () => {
 
     it('1582年10月4日 - 儒略历最后一天（跳过的日期）', () => {
       // 格里高利历中不存在1582年10月5-14日
-      // 算法应该仍能处理这些日期（按儒略历计算）
+      // 算法按格里高利历计算，10月4日会被当作10月15日前一天处理
+      // 因此 1582年10月4.5日 的儒略日接近 10月15日(JD 2299160.5) - 10.5 = 2299150
+      // 但实际算法将其视为格里高利历日期，结果为 JD 2299160.0
       const jd = gregorianToJD(1582, 10, 4.5);
       expect(jd).toBeDefined();
+      // 验证具体的儒略日值：算法按格里高利历计算
+      expect(jd).toBeCloseTo(2299160.0, 5);
     });
   });
 });
@@ -359,6 +371,12 @@ describe('特殊日期精度测试', () => {
 
         // 两个日期应该相差1天
         expect(jdFeb29 - jdFeb28).toBeCloseTo(1, 8);
+
+        // 验证2月29日实际被解析为3月1日
+        const resultFeb29 = jdToGregorian(jdFeb29);
+        expect(resultFeb29.year).toBe(year);
+        expect(resultFeb29.month).toBe(3);
+        expect(resultFeb29.day).toBe(1);
       });
     });
   });
@@ -373,8 +391,8 @@ describe('高精度数值验证', () => {
 
   it('儒略日起点精确值 (0.0)', () => {
     const jd = gregorianToJD(-4712, 1, 1.5);
-    // 精度要求：小数点后1位
-    expect(Math.abs(jd)).toBeLessThan(0.1);
+    // 精度要求：小数点后10位（与J2000纪元保持一致的高精度标准）
+    expect(Math.abs(jd)).toBeLessThan(1e-10);
   });
 
   it('大数值儒略日计算稳定性', () => {
