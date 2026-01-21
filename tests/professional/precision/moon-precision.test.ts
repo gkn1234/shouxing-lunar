@@ -54,17 +54,41 @@ const CENTURY_TO_YEARS = 100;
 /**
  * ELP/MPP02 月球理论精度要求
  * 数据来源：sm1.htm 第一章
+ *
+ * 注意：理论精度为 0.5 角秒，但由于测试验证时使用的参考值
+ * 可能来自不同版本的理论或计算参数，实际测试使用放宽的误差范围。
+ * 参见 REFERENCE_TOLERANCE_ARCSEC 常量。
  */
 const MOON_PRECISION_REQUIREMENTS = {
-  /** 黄经精度要求（角秒）*/
+  /** 黄经理论精度（角秒）- ELP/MPP02 标称精度 */
   longitudePrecision: 0.5,
-  /** 黄纬精度要求（角秒）*/
+  /** 黄纬理论精度（角秒）- ELP/MPP02 标称精度 */
   latitudePrecision: 0.5,
   /** 距离精度要求（千米）*/
   distancePrecision: 1,
   /** J2000.0 时间最大偏移（世纪数）*/
   maxCenturyOffset: 30,
 } as const;
+
+/**
+ * 参考值比对测试的容差（角秒）
+ *
+ * 理论精度为 0.5 角秒，但实际测试中由于以下原因使用放宽的误差范围：
+ * 1. 参考值可能来自不同版本的 ELP/MPP02 实现
+ * 2. 章动、岁差等修正参数可能略有差异
+ * 3. 数值计算的舍入误差累积
+ *
+ * 60 角秒 = 1 角分，足以验证计算的基本正确性
+ */
+const REFERENCE_TOLERANCE_ARCSEC = 60;
+
+/**
+ * 距离参考值比对的容差（千米）
+ *
+ * ELP/MPP02 实现与参考值可能来自不同版本或计算参数，
+ * 实测误差约 145 千米，设置允许误差为 200 千米
+ */
+const REFERENCE_TOLERANCE_DISTANCE_KM = 200;
 
 /**
  * 与 DE405/406 比较的精度要求
@@ -186,27 +210,23 @@ function angleDifference(angle1: number, angle2: number): number {
 }
 
 /**
- * 角度格式化输出（度分秒）
- * @param radians - 弧度
- * @returns 格式化字符串
- */
-function formatAngle(radians: number): string {
-  const totalDegrees = Math.abs(radians) * RAD_TO_DEG;
-  const degrees = Math.floor(totalDegrees);
-  const remainingMinutes = (totalDegrees - degrees) * 60;
-  const minutes = Math.floor(remainingMinutes);
-  const seconds = (remainingMinutes - minutes) * 60;
-  const sign = radians < 0 ? '-' : '';
-  return `${sign}${degrees}d${minutes}'${seconds.toFixed(2)}"`;
-}
-
-/**
  * 使用 sm1.htm 公式计算月球视半径
  * @param distance - 地月距离（千米）
  * @returns 视半径（角秒）
  */
 function calculateMoonRadiusByFormula(distance: number): number {
   return MOON_RADIUS_CONSTANT / distance;
+}
+
+/**
+ * 断言坐标数组中的所有值有效（非 NaN 且有限）
+ * @param coord - 坐标数组 [黄经, 黄纬, 距离]
+ */
+function expectValidCoord(coord: number[]): void {
+  coord.forEach((v) => {
+    expect(isNaN(v)).toBe(false);
+    expect(isFinite(v)).toBe(true);
+  });
 }
 
 // ============================================================================
@@ -239,10 +259,7 @@ describe('月球坐标精度验证 - ELP/MPP02 理论', () => {
       const diff = angleDifference(calculatedLon, referenceLon);
       const diffArcsec = diff * RAD_TO_ARCSEC;
 
-      // 允许较大误差范围（考虑不同理论版本差异）
-      // sm1.htm 标称精度为 0.5"，但实际实现可能有偏差
-      const allowedError = 60; // 60 角秒 = 1 角分
-      expect(diffArcsec).toBeLessThan(allowedError);
+      expect(diffArcsec).toBeLessThan(REFERENCE_TOLERANCE_ARCSEC);
     });
 
     it('视黄纬误差应小于精度要求', () => {
@@ -253,9 +270,7 @@ describe('月球坐标精度验证 - ELP/MPP02 理论', () => {
       const diff = Math.abs(calculatedLat - referenceLat);
       const diffArcsec = diff * RAD_TO_ARCSEC;
 
-      // 允许较大误差范围
-      const allowedError = 60; // 60 角秒 = 1 角分
-      expect(diffArcsec).toBeLessThan(allowedError);
+      expect(diffArcsec).toBeLessThan(REFERENCE_TOLERANCE_ARCSEC);
     });
 
     it('距离误差应小于精度要求', () => {
@@ -265,11 +280,7 @@ describe('月球坐标精度验证 - ELP/MPP02 理论', () => {
 
       const diff = Math.abs(calculatedDist - referenceDist);
 
-      // 允许较大误差范围（考虑不同理论版本差异）
-      // ELP/MPP02 实现与参考值可能来自不同版本或计算参数
-      // 实测误差约 145 千米，设置允许误差为 200 千米
-      const allowedError = 200; // 200 千米
-      expect(diff).toBeLessThan(allowedError);
+      expect(diff).toBeLessThan(REFERENCE_TOLERANCE_DISTANCE_KM);
     });
 
     it('输出详细比对信息', () => {
@@ -281,25 +292,10 @@ describe('月球坐标精度验证 - ELP/MPP02 理论', () => {
         Math.abs(coord[1] - REFERENCE_2008_JAN_6.apparentLatitude.radians) * RAD_TO_ARCSEC;
       const distDiff = Math.abs(coord[2] - REFERENCE_2008_JAN_6.distance);
 
-      // 记录详细信息（可在测试报告中查看）
-      console.log('=== 2008年1月6日 0h TD 月球位置比对 ===');
-      console.log(`儒略世纪数: ${testT.toFixed(8)}`);
-      console.log(`计算视黄经: ${formatAngle(coord[0])} (${(coord[0] * RAD_TO_DEG).toFixed(6)}deg)`);
-      console.log(
-        `参考视黄经: ${REFERENCE_2008_JAN_6.apparentLongitude.decimalDegrees.toFixed(6)}deg`
-      );
-      console.log(`黄经误差: ${lonDiff.toFixed(4)} 角秒`);
-      console.log(`计算视黄纬: ${formatAngle(coord[1])} (${(coord[1] * RAD_TO_DEG).toFixed(6)}deg)`);
-      console.log(
-        `参考视黄纬: ${REFERENCE_2008_JAN_6.apparentLatitude.decimalDegrees.toFixed(6)}deg`
-      );
-      console.log(`黄纬误差: ${latDiff.toFixed(4)} 角秒`);
-      console.log(`计算距离: ${coord[2].toFixed(2)} km`);
-      console.log(`参考距离: ${REFERENCE_2008_JAN_6.distance} km`);
-      console.log(`距离误差: ${distDiff.toFixed(2)} km`);
-
-      // 基本断言确保测试不为空
-      expect(coord).toBeDefined();
+      // 验证误差在容差范围内
+      expect(lonDiff).toBeLessThan(REFERENCE_TOLERANCE_ARCSEC);
+      expect(latDiff).toBeLessThan(REFERENCE_TOLERANCE_ARCSEC);
+      expect(distDiff).toBeLessThan(REFERENCE_TOLERANCE_DISTANCE_KM);
     });
   });
 
@@ -327,13 +323,7 @@ describe('月球坐标精度验证 - ELP/MPP02 理论', () => {
       testCenturies.forEach(({ t, desc }) => {
         it(`${desc}: 计算结果应有效（无 NaN 或 Infinity）`, () => {
           const coord = calculateMoonApparentCoord(t, -1);
-
-          expect(isNaN(coord[0])).toBe(false);
-          expect(isNaN(coord[1])).toBe(false);
-          expect(isNaN(coord[2])).toBe(false);
-          expect(isFinite(coord[0])).toBe(true);
-          expect(isFinite(coord[1])).toBe(true);
-          expect(isFinite(coord[2])).toBe(true);
+          expectValidCoord(coord);
         });
       });
     });
@@ -370,9 +360,7 @@ describe('月球坐标精度验证 - ELP/MPP02 理论', () => {
         );
         expect(coord).toBeDefined();
         expect(coord.length).toBe(3);
-        expect(isFinite(coord[0])).toBe(true);
-        expect(isFinite(coord[1])).toBe(true);
-        expect(isFinite(coord[2])).toBe(true);
+        expectValidCoord(coord);
       });
 
       it('J2000 -30 世纪边界处计算应成功', () => {
@@ -382,9 +370,7 @@ describe('月球坐标精度验证 - ELP/MPP02 理论', () => {
         );
         expect(coord).toBeDefined();
         expect(coord.length).toBe(3);
-        expect(isFinite(coord[0])).toBe(true);
-        expect(isFinite(coord[1])).toBe(true);
-        expect(isFinite(coord[2])).toBe(true);
+        expectValidCoord(coord);
       });
     });
   });
@@ -548,22 +534,16 @@ describe('月球坐标精度验证 - ELP/MPP02 理论', () => {
         const steps = 40;
         const dt = (endT - startT) / steps;
 
-        let prevCoord = calculateMoonApparentCoord(startT, -1);
-
-        for (let i = 1; i <= steps; i++) {
+        for (let i = 0; i <= steps; i++) {
           const t = startT + i * dt;
           const coord = calculateMoonApparentCoord(t, -1);
 
           // 基本有效性检查
-          expect(isFinite(coord[0])).toBe(true);
-          expect(isFinite(coord[1])).toBe(true);
-          expect(isFinite(coord[2])).toBe(true);
+          expectValidCoord(coord);
 
           // 距离应始终在合理范围
           expect(coord[2]).toBeGreaterThan(MOON_ORBITAL_RANGE.minDistance * 0.9);
           expect(coord[2]).toBeLessThan(MOON_ORBITAL_RANGE.maxDistance * 1.1);
-
-          prevCoord = coord;
         }
       });
     });
@@ -600,10 +580,7 @@ describe('月球坐标精度验证 - ELP/MPP02 理论', () => {
 
       extremeTimes.forEach((t) => {
         const coord = calculateMoonApparentCoord(t, -1);
-
-        expect(isNaN(coord[0])).toBe(false);
-        expect(isNaN(coord[1])).toBe(false);
-        expect(isNaN(coord[2])).toBe(false);
+        expectValidCoord(coord);
       });
     });
 
@@ -634,12 +611,7 @@ describe('月球坐标精度验证 - ELP/MPP02 理论', () => {
         const lat = calculateMoonLatitude(t, -1);
         const dist = calculateMoonDistance(t, -1);
 
-        expect(isNaN(lon)).toBe(false);
-        expect(isNaN(lat)).toBe(false);
-        expect(isNaN(dist)).toBe(false);
-        expect(isFinite(lon)).toBe(true);
-        expect(isFinite(lat)).toBe(true);
-        expect(isFinite(dist)).toBe(true);
+        expectValidCoord([lon, lat, dist]);
       });
     });
   });
@@ -682,9 +654,7 @@ describe('月球坐标精度验证 - ELP/MPP02 理论', () => {
         const coord = calculateMoonApparentCoord(t, -1);
 
         // 所有值应有效
-        expect(isFinite(coord[0])).toBe(true);
-        expect(isFinite(coord[1])).toBe(true);
-        expect(isFinite(coord[2])).toBe(true);
+        expectValidCoord(coord);
 
         // 坐标应在合理范围
         expect(coord[0]).toBeGreaterThanOrEqual(0);
